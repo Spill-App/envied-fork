@@ -1,4 +1,4 @@
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:envied_generator/src/extensions.dart';
@@ -12,13 +12,13 @@ import 'package:source_gen/source_gen.dart';
 /// an [InvalidGenerationSourceError] will also be thrown if
 /// the type can't be casted, or is not supported.
 Iterable<Field> generateFields(
-  FieldElement field,
+  FieldElement2 field,
   String? value, {
   bool allowOptional = false,
   bool rawString = false,
   bool multipleAnnotations = false,
 }) {
-  final String type = field.type.getDisplayString(withNullability: false);
+  final String type = field.type.getDisplayString();
 
   late final FieldModifier modifier;
   late final Expression result;
@@ -26,7 +26,7 @@ Iterable<Field> generateFields(
   if (value == null) {
     if (!allowOptional) {
       throw InvalidGenerationSourceError(
-        'Environment variable not found for field `${field.name}`.',
+        'Environment variable not found for field `${field.name3}`.',
         element: field,
       );
     }
@@ -52,9 +52,7 @@ Iterable<Field> generateFields(
     modifier = FieldModifier.constant;
     result = literalNull;
   } else {
-    if (field.type.isDartCoreInt ||
-        field.type.isDartCoreDouble ||
-        field.type.isDartCoreNum) {
+    if (field.type.isDartCoreInt || field.type.isDartCoreDouble || field.type.isDartCoreNum) {
       final num? parsed = num.tryParse(value);
 
       if (parsed == null) {
@@ -113,7 +111,7 @@ Iterable<Field> generateFields(
         ],
       );
     } else if (field.type.isDartEnum) {
-      final EnumElement enumElement = field.type.element as EnumElement;
+      final EnumElement2 enumElement = field.type.element3 as EnumElement2;
 
       if (!enumElement.valueNames.contains(value)) {
         throw InvalidGenerationSourceError(
@@ -153,10 +151,8 @@ Iterable<Field> generateFields(
         ])
         ..static = !multipleAnnotations
         ..modifier = !multipleAnnotations ? modifier : FieldModifier.final$
-        ..type = field.type is! DynamicType
-            ? refer(field.type.getDisplayString(withNullability: allowOptional))
-            : null
-        ..name = field.name
+        ..type = field.type is! DynamicType ? refer(field.type.getDisplayString()) : null
+        ..name = field.name3
         ..assignment = result.code,
     ),
   ];

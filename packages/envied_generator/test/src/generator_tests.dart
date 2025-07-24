@@ -21,7 +21,7 @@ final class _Env0 {}
 abstract class Env0 {}
 
 @ShouldThrow(
-  "Environment variable file doesn't exist at `${const String.fromEnvironment('ENV_PATH', defaultValue: '.env')}`.",
+  "Environment variable file doesn't exist at `${String.fromEnvironment('ENV_PATH', defaultValue: '.env')}`.",
 )
 @Envied(requireEnvFile: true)
 abstract class Env1 {}
@@ -617,8 +617,7 @@ abstract class Env20b {
 }
 
 @ShouldGenerate(r'static const List<int> _enviedkeytestDynamic', contains: true)
-@ShouldGenerate(r'static const List<int> _envieddatatestDynamic',
-    contains: true)
+@ShouldGenerate(r'static const List<int> _envieddatatestDynamic', contains: true)
 @ShouldGenerate(r'''
   static final testDynamic = String.fromCharCodes(
     List<int>.generate(
@@ -855,10 +854,8 @@ abstract class Env30b {
   static final DateTime? testDateTime = null;
 }
 
-@ShouldGenerate(r'static const List<int> _enviedkeytestDateTime',
-    contains: true)
-@ShouldGenerate(r'static const List<int> _envieddatatestDateTime',
-    contains: true)
+@ShouldGenerate(r'static const List<int> _enviedkeytestDateTime', contains: true)
+@ShouldGenerate(r'static const List<int> _envieddatatestDateTime', contains: true)
 @ShouldGenerate(r'''
   static final DateTime testDateTime = DateTime.parse(
     String.fromCharCodes(
@@ -876,10 +873,8 @@ abstract class Env30c {
   static final DateTime? testDateTime = null;
 }
 
-@ShouldGenerate(r'static const List<int> _enviedkeytestDateTime',
-    contains: true)
-@ShouldGenerate(r'static const List<int> _envieddatatestDateTime',
-    contains: true)
+@ShouldGenerate(r'static const List<int> _enviedkeytestDateTime', contains: true)
+@ShouldGenerate(r'static const List<int> _envieddatatestDateTime', contains: true)
 @ShouldGenerate(r'''
   static final DateTime? testDateTime = DateTime.parse(
     String.fromCharCodes(
