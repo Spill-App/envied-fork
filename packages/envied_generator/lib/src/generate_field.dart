@@ -18,13 +18,14 @@ Iterable<Field> generateFields(
   bool rawString = false,
   bool multipleAnnotations = false,
 }) {
-  final String type = field.type.getDisplayString();
+  final String type = field.type.typeNameDisplayString;
 
   late final FieldModifier modifier;
   late final Expression result;
 
   if (value == null) {
-    if (!allowOptional) {
+    final bool isNullable = field.type.nullabilitySuffix.toString() == 'NullabilitySuffix.question';
+    if (!allowOptional || !isNullable) {
       throw InvalidGenerationSourceError(
         'Environment variable not found for field `${field.name3}`.',
         element: field,
@@ -56,8 +57,10 @@ Iterable<Field> generateFields(
       final num? parsed = num.tryParse(value);
 
       if (parsed == null) {
+        String typeStr = type;
+        if (typeStr.endsWith('?')) typeStr = typeStr.substring(0, typeStr.length - 1);
         throw InvalidGenerationSourceError(
-          'Type `$type` does not align with value `$value`.',
+          'Type `$typeStr` does not align with value `$value`.',
           element: field,
         );
       }
@@ -68,8 +71,10 @@ Iterable<Field> generateFields(
       final bool? parsed = bool.tryParse(value);
 
       if (parsed == null) {
+        String typeStr = type;
+        if (typeStr.endsWith('?')) typeStr = typeStr.substring(0, typeStr.length - 1);
         throw InvalidGenerationSourceError(
-          'Type `$type` does not align with value `$value`.',
+          'Type `$typeStr` does not align with value `$value`.',
           element: field,
         );
       }
@@ -80,8 +85,10 @@ Iterable<Field> generateFields(
       final Uri? parsed = Uri.tryParse(value);
 
       if (parsed == null) {
+        String typeStr = type;
+        if (typeStr.endsWith('?')) typeStr = typeStr.substring(0, typeStr.length - 1);
         throw InvalidGenerationSourceError(
-          'Type `$type` does not align with value `$value`.',
+          'Type `$typeStr` does not align with value `$value`.',
           element: field,
         );
       }
@@ -97,8 +104,10 @@ Iterable<Field> generateFields(
       final DateTime? parsed = DateTime.tryParse(value);
 
       if (parsed == null) {
+        String typeStr = type;
+        if (typeStr.endsWith('?')) typeStr = typeStr.substring(0, typeStr.length - 1);
         throw InvalidGenerationSourceError(
-          'Type `$type` does not align with value `$value`.',
+          'Type `$typeStr` does not align with value `$value`.',
           element: field,
         );
       }
@@ -151,7 +160,12 @@ Iterable<Field> generateFields(
         ])
         ..static = !multipleAnnotations
         ..modifier = !multipleAnnotations ? modifier : FieldModifier.final$
-        ..type = field.type is! DynamicType ? refer(field.type.getDisplayString()) : null
+        ..type = field.type is! DynamicType
+            ? refer(
+                field.type.typeNameDisplayString +
+                ((allowOptional && field.type.nullabilitySuffix.toString() == 'NullabilitySuffix.question') ? '?' : '')
+              )
+            : null
         ..name = field.name3
         ..assignment = result.code,
     ),

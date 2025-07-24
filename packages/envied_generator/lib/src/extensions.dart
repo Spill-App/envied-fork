@@ -23,6 +23,16 @@ extension EnumElement2Extension on EnumElement2 {
   Iterable<String> get valueNames => values.map((FieldElement2 fe) => fe.name3 ?? '');
 }
 
+extension DartTypeExt on DartType {
+  String get typeNameDisplayString {
+    String type = getDisplayString();
+    if (type.endsWith('?')) {
+      type = type.substring(0, type.length - 1);
+    }
+    return type;
+  }
+}
+
 /// Taken from https://stackoverflow.com/questions/76038472/limit-string-split-to-a-maximum-number-of-elements#answer-76039017
 extension PartialSplit on String {
   /// A version of [String.split] that limits splitting to return a [List]

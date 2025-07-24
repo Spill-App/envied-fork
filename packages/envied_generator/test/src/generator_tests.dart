@@ -634,7 +634,7 @@ abstract class Env21 {
 }
 
 @ShouldThrow(
-  'Obfuscated envied can only handle types such as `int`, `double`, `num`, `bool`, `Uri`, `DateTime` and `String`. Type `Symbol` is not one of them.',
+  'Obfuscated envied can only handle types such as `int`, `double`, `num`, `bool`, `Uri`, `DateTime`, `Enum` and `String`. Type `Symbol` is not one of them.',
 )
 @Envied(path: 'test/.env.example')
 abstract class Env22 {

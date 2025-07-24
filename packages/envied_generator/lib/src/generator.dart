@@ -9,6 +9,7 @@ import 'package:code_builder/code_builder.dart';
 import 'package:envied/envied.dart';
 import 'package:envied_generator/src/build_options.dart';
 import 'package:envied_generator/src/env_val.dart';
+import 'package:envied_generator/src/extensions.dart';
 import 'package:envied_generator/src/generate_field.dart';
 import 'package:envied_generator/src/generate_field_encrypted.dart';
 import 'package:envied_generator/src/load_envs.dart';
@@ -30,7 +31,49 @@ final class EnviedGenerator extends GeneratorForAnnotation<Envied> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) async {
-    final Iterable<ConstantReader> enviedAnnotations = (element.library2?.metadata2.annotations ?? [])
+    // Synchronously throw if the element is not a class, so test matchers can catch it
+    if (element is! ClassElement2) {
+      throw InvalidGenerationSourceError(
+        '`@Envied` can only be used on classes.',
+        element: element,
+      );
+    }
+    // Synchronously throw if any field has an unsupported type
+    final classElement = element;
+    for (final field in classElement.fields2) {
+      if (_typeChecker(EnviedField).hasAnnotationOf(field)) {
+        // Synchronously throw if the field type is InvalidType
+        if (field.type is InvalidType) {
+          throw InvalidGenerationSourceError(
+            'Envied requires types to be explicitly declared. `${field.name3}` does not declare a type.',
+            element: field,
+          );
+        }
+        String typeStr = field.type.typeNameDisplayString;
+        const supportedTypes = ['int', 'double', 'num', 'bool', 'Uri', 'DateTime', 'String', 'dynamic'];
+        // Determine if obfuscation is enabled for this field or class
+        final fieldObfuscate = field.metadata2.annotations.any((a) =>
+            a.element2?.displayName == 'EnviedField' &&
+            ConstantReader(a.computeConstantValue()).read('obfuscate').literalValue == true);
+        final classObfuscate = annotation.read('obfuscate').literalValue == true;
+        final isObfuscated = fieldObfuscate || classObfuscate;
+        if (!supportedTypes.contains(typeStr) && !field.type.isDartEnum) {
+          if (isObfuscated) {
+            throw InvalidGenerationSourceError(
+              'Obfuscated envied can only handle types such as `int`, `double`, `num`, `bool`, `Uri`, `DateTime`, `Enum` and `String`. Type `$typeStr` is not one of them.',
+              element: field,
+            );
+          } else {
+            throw InvalidGenerationSourceError(
+              'Envied can only handle types such as `int`, `double`, `num`, `bool`, `Uri`, `DateTime`, `Enum` and `String`. Type `$typeStr` is not one of them.',
+              element: field,
+            );
+          }
+        }
+      }
+    }
+
+    final Iterable<ConstantReader> enviedAnnotations = element.metadata2.annotations
         .where((ElementAnnotation annotation) => annotation.element2?.displayName == 'Envied')
         .map((ElementAnnotation annotation) => ConstantReader(annotation.computeConstantValue()));
 
@@ -119,7 +162,13 @@ final class EnviedGenerator extends GeneratorForAnnotation<Envied> {
         ),
     );
 
-    return cls.accept(emitter).toString();
+    String classOutput = cls.accept(emitter).toString();
+    // If code_builder emits nothing or only whitespace for an empty class, emit it manually
+    if (classOutput.replaceAll(RegExp(r'\s+'), '').isEmpty) {
+      final className = '_${config.name ?? enviedEl.name3}';
+      classOutput = 'final class $className {}\n';
+    }
+    return classOutput;
   }
 
   static TypeChecker _typeChecker(Type type) => TypeChecker.fromRuntime(type);
@@ -159,14 +208,20 @@ final class EnviedGenerator extends GeneratorForAnnotation<Envied> {
         );
       }
       final String? env = Platform.environment[envKey];
+      final bool isNullable =
+          config.allowOptionalFields && field.type.nullabilitySuffix.toString() == 'NullabilitySuffix.question';
       if (env == null) {
-        throw InvalidGenerationSourceError(
-          'Expected to find an System environment variable named `$envKey` for field `${field.name3}` but no value was found.',
-          element: field,
-        );
+        if (!config.allowOptionalFields || !isNullable) {
+          throw InvalidGenerationSourceError(
+            'Expected to find an System environment variable named `$envKey` for field `${field.name3}` but no value was found.',
+            element: field,
+          );
+        } else {
+          varValue = null;
+        }
+      } else {
+        varValue = EnvVal(raw: env);
       }
-
-      varValue = EnvVal(raw: env);
     } else if (envs.containsKey(varName)) {
       varValue = envs[varName];
     } else if (Platform.environment.containsKey(varName)) {
